@@ -112,7 +112,7 @@ class Level {
   }
 
   actorAt(obj) {
-    if (typeof(obj) === 'undefined' || !obj instanceof Actor) {
+    if (typeof(obj) === 'undefined' || !(obj instanceof Actor)) {
       throw new Error('Аргумент должен быть типа Actor');
     }
     return this.actors.find(function(actor) {
@@ -176,5 +176,69 @@ class Level {
         this.status = 'won';
       }
     }
+  }
+}
+
+class LevelParser {
+  constructor(dict) {
+    if (typeof(dict) === 'undefined') {
+      dict = {};
+    }
+    this.dict = dict;
+  }
+
+  actorFromSymbol(symbol) {
+    if (typeof(symbol) === 'undefined') {
+      return undefined;
+    }
+    return this.dict[symbol];
+  }
+
+  obstacleFromSymbol(symbol) {
+    switch (symbol) {
+      case 'x':
+        return 'wall';
+      case '!':
+        return 'lava';
+    }
+  }
+
+  createGrid(strings) {
+    let grid = new Array(strings.length);
+
+    for (let x in strings) {
+      grid[x] = new Array(strings[x].length);
+      for (let y in strings[x]) {
+        grid[x][y] = this.obstacleFromSymbol(strings[x][y]);
+      }
+    }
+    return grid;
+  }
+
+  createActors(strings) {
+    let actors = [];
+
+    for (let x in strings) {
+      for (let y in strings[x]) {
+        let symbol = strings[x][y];
+        let construc = this.dict[symbol];
+
+        if (typeof(construc) !== 'function') {
+          continue;
+        }
+
+        let obj = new construc(new Vector(parseInt(y), parseInt(x)));
+        if (obj instanceof Actor) {
+          actors.push(obj);
+        }
+      }
+    }
+    return actors;
+  }
+
+  parse(strings) {
+    let grid = this.createGrid(strings);
+    let actors = this.createActors(strings);
+    return new Level(grid, actors);
   }
 }
