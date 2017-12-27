@@ -242,3 +242,106 @@ class LevelParser {
     return new Level(grid, actors);
   }
 }
+
+class Fireball extends Actor {
+  constructor(pos, speed) {
+    super(pos, undefined, speed);
+  }
+
+  get type() {
+    return 'fireball';
+  }
+
+  getNextPosition(time = 1) {
+    return this.pos.plus(this.speed.times(time));
+  }
+
+  handleObstacle() {
+    this.speed = this.speed.times(-1);
+  }
+
+  act(time, level) {
+    let nextPosition = this.getNextPosition(time);
+    if (level.obstacleAt(nextPosition, this.size)) {
+      this.handleObstacle();
+    } else {
+      this.pos = nextPosition;
+    }
+  }
+}
+
+class HorizontalFireball extends Fireball {
+  constructor(pos) {
+    let speed = new Vector(2, 0);
+    super(pos, speed);
+  }
+}
+
+class VerticalFireball extends Fireball {
+  constructor(pos) {
+    let speed = new Vector(0, 2);
+    super(pos, speed);
+  }
+}
+
+class FireRain extends Fireball {
+  constructor(pos) {
+    let speed = new Vector(0, 3);
+    super(pos, speed);
+    this.startPos = pos;
+  }
+
+  handleObstacle() {
+    this.pos = this.startPos;
+  }
+}
+
+class Coin extends Actor {
+  constructor(pos) {
+    let size = new Vector(0.6, 0.6);
+    let delta = new Vector(0.2, 0.1);
+    super(pos, size);
+    this.pos = this.pos.plus(delta);
+    this.startPos = new Vector(this.pos.x, this.pos.y);
+
+    this.springSpeed = 8;
+    this.springDist = 0.07;
+    this.spring = 2 * Math.PI * Math.random();
+  }
+
+  get type() {
+    return 'coin';
+  }
+
+  updateSpring(time = 1) {
+    this.spring += this.springSpeed * time;
+  }
+
+  getSpringVector() {
+    let y = Math.sin(this.spring) * this.springDist;
+    return new Vector(0, y);
+  }
+
+  getNextPosition(time = 1) {
+    this.updateSpring(time);
+    return this.startPos.plus(this.getSpringVector());
+  }
+
+  act(time) {
+    this.pos = this.getNextPosition(time);
+  }
+}
+
+class Player extends Actor {
+  constructor(pos) {
+    let size = new Vector(0.8, 1.5);
+    let delta = new Vector(0, -0.5);
+
+    super(pos, size);
+    this.pos = this.pos.plus(delta);
+  }
+
+  get type() {
+    return 'player';
+  }
+}
