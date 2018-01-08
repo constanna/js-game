@@ -19,16 +19,7 @@ class Vector {
 }
 
 class Actor {
-  constructor(pos, size, speed) {
-    if (typeof(pos) === 'undefined') {
-      pos = new Vector(0, 0);
-    }
-    if (typeof(size) === 'undefined') {
-      size = new Vector(1, 1);
-    }
-    if (typeof(speed) === 'undefined') {
-      speed = new Vector(0, 0);
-    }
+  constructor(pos = new Vector(0, 0), size = new Vector(1, 1), speed = new Vector(0, 0)) {
     if (!(pos instanceof Vector) || !(size instanceof Vector) || !(speed instanceof Vector)) {
       throw new Error('Параметры должны быть векторами типа Vector');
     }
@@ -78,13 +69,9 @@ class Actor {
 }
 
 class Level {
-  constructor(grid, actors) {
+  constructor(grid, actors = []) {
     this.grid = grid;
-    if(typeof(actors) !== 'undefined') {
-      this.actors = actors;
-    } else {
-      this.actors = [];
-    }
+    this.actors = actors;
 
     this.player = this.actors.find(function(actor) {
       return actor.type === 'player';
@@ -125,11 +112,13 @@ class Level {
       throw new Error('Аргументы должны быть типа Vector');
     }
 
-    if (pos.y + size.y >= this.height) {
+    let actor = new Actor(pos, size);
+
+    if (actor.bottom >= this.height) {
       return 'lava';
     }
 
-    if (pos.x < 0 || pos.y < 0 || pos.x + size.x >= this.width) {
+    if (actor.left < 0 || actor.top < 0 || actor.right >= this.width) {
       return 'wall';
     }
 
@@ -137,8 +126,8 @@ class Level {
       return;
     }
 
-    for (let y = Math.floor(pos.y); y < Math.ceil(pos.y + size.y); y++) {
-      for (let x = Math.floor(pos.x); x < Math.ceil(pos.x + size.x); x++) {
+    for (let y = Math.floor(actor.top); y < Math.ceil(actor.bottom); y++) {
+      for (let x = Math.floor(actor.left); x < Math.ceil(actor.right); x++) {
         if (typeof(this.grid[x][y] !== 'undefined')) {
           return (this.grid)[x][y];
         }
@@ -180,10 +169,7 @@ class Level {
 }
 
 class LevelParser {
-  constructor(dict) {
-    if (typeof(dict) === 'undefined') {
-      dict = {};
-    }
+  constructor(dict = {}) {
     this.dict = dict;
   }
 
@@ -204,15 +190,9 @@ class LevelParser {
   }
 
   createGrid(strings) {
-    let grid = new Array(strings.length);
-
-    for (let x in strings) {
-      grid[x] = new Array(strings[x].length);
-      for (let y in strings[x]) {
-        grid[x][y] = this.obstacleFromSymbol(strings[x][y]);
-      }
-    }
-    return grid;
+    return strings.map(str => {
+      return str.split('').map(char => this.obstacleFromSymbol(char));
+    });
   }
 
   createActors(strings) {
